@@ -5,7 +5,6 @@ import tempfile
 import pymupdf4llm
 
 def main(context):
-    # 1. Handle CORS for browser requests
     if context.req.method == 'OPTIONS':
         return context.res.send('', 200, {
             'Access-Control-Allow-Origin': '*',
@@ -16,29 +15,39 @@ def main(context):
         return context.res.json({'error': 'Method not allowed'}, 405, {'Access-Control-Allow-Origin': '*'})
 
     try:
-        # 2. Parse Payload
         body = context.req.body_json if hasattr(context.req, 'body_json') and context.req.body_json else {}
         if not body and context.req.body:
             body = json.loads(context.req.body) if isinstance(context.req.body, str) else context.req.body
 
-        file_b64 = body.get('file_b64')
+        file_b64 = body.get('file_b64', '')
         if not file_b64:
             return context.res.json({'error': 'Missing file_b64 in payload'}, 400, {'Access-Control-Allow-Origin': '*'})
 
-        # 3. Decode File & Create Temporary Path
-        # file_data = base64.b64decode(file_b64)
+        # 1. Clean whitespace, line breaks, and Data-URI headers
+        if ',' in file_b64:
+            file_b64 = file_b64.split(',', 1)[1]
+        file_b64 = ''.join(file_b64.split())
 
-        # 3. Decode File & Create Temporary Path
-        # Automatically fix missing Base64 padding
-        file_b64 += "=" * ((4 - len(file_b64) % 4) % 4)
-        file_data = base64.b64decode(file_b64)
-        
+        # 2. Safe padding check
+        remainder = len(file_b64) % 4
+        if remainder == 1:
+            # Drop the single orphaned character that prevents decoding
+            file_b64 = file_b64[:-1]
+        elif remainder > 1:
+            file_b64 += '=' * (4 - remainder)
+
+        # 3. Decode Base64
+        try:
+            file_data = base64.b64decode(file_b64)
+        except Exception as b64_err:
+            return context.res.json({'error': f'Invalid Base64 data: {str(b64_err)}'}, 400, {'Access-Control-Allow-Origin': '*'})
+
+        # 4. Write to temp file and parse with PyMuPDF
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_in:
             temp_in.write(file_data)
             temp_in_path = temp_in.name
             
         try:
-            # 4. Convert PDF to Markdown (extracts tables perfectly formatted for LLMs)
             md_text = pymupdf4llm.to_markdown(temp_in_path)
             
             return context.res.json({
@@ -49,10 +58,9 @@ def main(context):
             }, 200, {'Access-Control-Allow-Origin': '*'})
 
         finally:
-            # 5. PRIVACY GUARANTEE: Instantly wipe file from RAM/Disk
             if os.path.exists(temp_in_path):
                 os.remove(temp_in_path)
 
     except Exception as e:
         context.error(f"Processing Error: {str(e)}")
-        return context.res.json({'error': 'Server processing failed. Please check the file.'}, 500, {'Access-Control-Allow-Origin': '*'})
+        return context.res.json({'error': f"Conversion failed: {str(e)}"}, 500, {'Access-Control-Allow-Origin': '*'})
