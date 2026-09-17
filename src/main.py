@@ -26,6 +26,11 @@ def main(context):
             return context.res.json({'error': 'Missing file_b64 in payload'}, 400, {'Access-Control-Allow-Origin': '*'})
 
         # 3. Decode File & Create Temporary Path
+        # file_data = base64.b64decode(file_b64)
+
+        # 3. Decode File & Create Temporary Path
+        # Automatically fix missing Base64 padding
+        file_b64 += "=" * ((4 - len(file_b64) % 4) % 4)
         file_data = base64.b64decode(file_b64)
         
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_in:
