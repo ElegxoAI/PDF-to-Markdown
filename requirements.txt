@@ -1,4 +1,3 @@
 appwrite
 pymupdf
 pymupdf4llm
-pymupdf_layout
