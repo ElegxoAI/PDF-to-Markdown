@@ -18,11 +18,11 @@ The Advanced version uses the Elegxo AI cloud function with open-source tools fo
 | PDF to Markdown | ✓ | ✓ |
 | Text conversion | ✓ | ✓ |
 | Headings and lists | ✓ | ✓ |
-| Table extraction | — | ✓ |
-| Markdown tables | — | ✓ |
+| Table extraction | - | ✓ |
+| Markdown tables | - | ✓ |
 | Richer document structure | Basic | Advanced |
-| Server-side processing | — | ✓ |
-| Open-source processing tools | — | ✓ |
+| Server-side processing | - | ✓ |
+| Open-source processing tools | - | ✓ |
 
 ## ⚠️ License & Usage
 
