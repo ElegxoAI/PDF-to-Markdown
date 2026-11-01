@@ -6,7 +6,9 @@ import pymupdf4llm
 
 def main(context):
     # Define who is allowed to talk to your server
-    ALLOWED_ORIGIN = 'https://elegxoai.in'
+    # ALLOWED_ORIGIN = 'https://elegxoai.in'
+
+    ALLOWED_ORIGIN = '*'
     
     if context.req.method == 'OPTIONS':
         return context.res.send('', 200, {
